@@ -38,9 +38,26 @@ export default tseslint.config(
     files: ['src/application/**'],
     rules: {
       'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            regex: '^#(infra|main)/',
+            message: 'application/ não pode depender de infra/ nem de main/.',
+          },
+          {
+            regex: '^\\.{1,2}/(.*/)?(infra|main)(/|$)',
+            message: 'application/ não pode depender de infra/ nem de main/.',
+          },
+        ],
+      }],
+    },
+  },
+  {
+    files: ['src/infra/database/drizzle/schema/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
         patterns: [{
-          regex: '^#(infra|main)/',
-          message: 'application/ não pode depender de infra/ nem de main/.',
+          regex: '^#',
+          message: 'Schema do Drizzle só importa drizzle-orm e caminhos relativos (drizzle-kit não resolve subpath imports).',
         }],
       }],
     },

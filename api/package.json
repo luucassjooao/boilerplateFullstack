@@ -8,25 +8,25 @@
   },
   "imports": {
     "#application/*": {
-      "development": "./src/application/*.ts",
+      "source": "./src/application/*.ts",
       "default": "./dist/application/*.js"
     },
     "#infra/*": {
-      "development": "./src/infra/*.ts",
+      "source": "./src/infra/*.ts",
       "default": "./dist/infra/*.js"
     },
     "#main/*": {
-      "development": "./src/main/*.ts",
+      "source": "./src/main/*.ts",
       "default": "./dist/main/*.js"
     },
     "#shared/*": {
-      "development": "./src/shared/*.ts",
+      "source": "./src/shared/*.ts",
       "default": "./dist/shared/*.js"
     },
     "#tests/*": "./tests/*.ts"
   },
   "scripts": {
-    "dev": "tsx watch --conditions=development src/main/index.ts",
+    "dev": "tsx watch --conditions=source src/main/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main/index.js",
     "lint": "eslint .",

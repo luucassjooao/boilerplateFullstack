@@ -1,6 +1,11 @@
+import { defaultServerConditions } from 'vite';
 import { defineConfig } from 'vitest/config';
 
+const conditions = ['source', ...defaultServerConditions];
+
 export default defineConfig({
+  resolve: { conditions },
+  ssr: { resolve: { conditions } },
   test: {
     include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
     passWithNoTests: true,
