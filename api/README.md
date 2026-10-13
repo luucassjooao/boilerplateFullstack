@@ -21,6 +21,28 @@ pnpm dev                      # http://localhost:3333
 
 Com `EMAIL_PROVIDER=console`, os códigos de verificação aparecem no log da API.
 
+## Endpoints
+
+Todas as rotas de sessão exigem o header `X-Client-Platform: web | mobile`. Erros sempre no formato `{ "error": { "code", "message" } }`.
+
+| Método | Rota | Body | Sucesso |
+|---|---|---|---|
+| POST | `/auth/sign-up` | `{ name, email, password }` | 201 (envia código) |
+| POST | `/auth/verify-email` | `{ email, code }` | 200 sessão |
+| POST | `/auth/verify-email/resend` | `{ email }` | 204 sempre |
+| POST | `/auth/sign-in` | `{ email, password }` | 200 sessão |
+| POST | `/auth/refresh` | `{ refreshToken? }` (mobile) / cookie (web) | 200 sessão |
+| POST | `/auth/sign-out` | `{ refreshToken? }` (mobile) / cookie (web) | 204 |
+| POST | `/auth/forgot-password` | `{ email }` | 204 sempre |
+| POST | `/auth/reset-password` | `{ email, code, password }` | 204 (revoga todas as sessões) |
+| GET | `/auth/oauth/:provider/authorize?redirectTo=/x` | — | 302 para o provedor |
+| GET/POST | `/auth/oauth/:provider/callback` | (do provedor) | 302 para `WEB_URL/auth/callback` |
+| POST | `/auth/oauth/:provider/token` | `{ idToken, nonce?, name? }` | 200 sessão (mobile) |
+| GET | `/me` | — (Bearer) | 200 `{ id, name, email, emailVerified, providers }` |
+| GET | `/health` | — | 200 |
+
+Sessão: web → `{ accessToken }` + cookie httpOnly `refresh_token`; mobile → `{ accessToken, refreshToken }`.
+
 ## Scripts
 
 | Script | O que faz |
@@ -34,6 +56,22 @@ Com `EMAIL_PROVIDER=console`, os códigos de verificação aparecem no log da AP
 | `pnpm db:generate` | gera migration a partir do schema Drizzle |
 | `pnpm db:migrate` / `db:migrate:prod` | aplica migrations (src / dist) |
 | `pnpm db:studio` | Drizzle Studio |
+
+## Variáveis de ambiente
+
+Todas estão documentadas em [`.env.example`](./.env.example) e são validadas com Zod no boot (a API não sobe com valor inválido). Em produção:
+
+- Gere segredos novos (`openssl rand -base64 48`) para `COOKIE_SECRET`, `JWT_SECRET` e `CODE_HASH_SECRET`.
+- `COOKIE_SECURE=true`, `EMAIL_PROVIDER=resend` e `TRUST_PROXY=true` atrás de load balancer.
+- `WEB_ORIGINS`, `WEB_URL` e `API_URL` com os domínios reais. Web e API precisam estar no mesmo site (ex.: `app.x.com` e `api.x.com`) por causa do cookie `SameSite=Lax`.
+
+## Deploy
+
+```bash
+pnpm build                 # dist/ + migrations
+pnpm db:migrate:prod       # precisa só de DATABASE_URL
+pnpm start
+```
 
 ## Credenciais OAuth
 
