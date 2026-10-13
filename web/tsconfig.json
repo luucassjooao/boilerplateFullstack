@@ -1,0 +1,27 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "paths": {
+      "@app/*": [
+        "./src/app/*"
+      ],
+      "@ui/*": [
+        "./src/ui/*"
+      ],
+      "@router/*": [
+        "./src/router/*"
+      ],
+      "@test/*": [
+        "./src/test/*"
+      ]
+    }
+  }
+}
