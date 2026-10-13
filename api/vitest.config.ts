@@ -8,6 +8,7 @@ export default defineConfig({
   ssr: { resolve: { conditions } },
   test: {
     include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
+    exclude: ['**/node_modules/**', '**/*.integration.spec.ts'],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',

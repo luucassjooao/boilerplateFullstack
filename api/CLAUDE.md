@@ -19,6 +19,12 @@
 - **Camadas**: `src/application/**` não importa `infra/` nem `main/`, nem via alias (`#infra/*`, `#main/*`) nem via caminho relativo (`../infra/...`, `../../main/...`). Implementado com `no-restricted-imports` + `regex`. O formato gitignore (`group`) trata `#` como comentário, por isso não usamos `group`. Não crie subpastas chamadas `infra` ou `main` dentro de `application/`, porque a regex as bloquearia.
 - **Schema do Drizzle** (`src/infra/database/drizzle/schema/**`) só importa `drizzle-orm` e caminhos relativos, **nunca `#...`**: o drizzle-kit carrega esses arquivos com o próprio loader, que não resolve subpath imports com condições. O lint bloqueia `#...` nessa pasta.
 
+## Testes
+
+- Unitários (`tests/unit`), e2e HTTP (`tests/e2e`, via `app.inject()` com `makeTestApp()`: in-memory + fakes) e contratos (`tests/contracts`). Ficam em `tests/` porque usam `#infra/*` (in-memory), proibido dentro de `src/application/**`.
+- `pnpm test:integration` roda as mesmas suítes de contrato contra o Postgres (`TEST_DATABASE_URL`; o banco é criado e migrado pelo globalSetup). Precisa de `docker compose up -d`.
+- O **globalSetup não pode usar `#...`**: ele roda no ambiente interno `__vitest__` do Vite, que ignora `resolve.conditions`.
+
 ## Outros
 
 - Testes: `*.spec.ts` em `src/` ou `tests/`. Coverage mínimo de 90% em `src/application/**` (`pnpm test:coverage`).

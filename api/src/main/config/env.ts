@@ -19,12 +19,25 @@ const envSchema = z.object({
   JWT_SECRET: secret,
   JWT_ISSUER: z.string().min(1).default('api'),
   JWT_AUDIENCE: z.string().min(1).default('app'),
+  // Secure cookies need HTTPS; only turn off for http://localhost.
+  COOKIE_SECURE: z.stringbool().default(true),
+  DATABASE_URL: z.url(),
+  CODE_HASH_SECRET: secret,
+  EMAIL_PROVIDER: z.enum(['console', 'resend']).default('console'),
+  EMAIL_FROM: z.string().min(1).default('App <onboarding@resend.dev>'),
+  RESEND_API_KEY: z.string().min(1).optional(),
+}).superRefine((env, ctx) => {
+  if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) {
+    ctx.addIssue({ code: 'custom', path: ['RESEND_API_KEY'], message: 'required when EMAIL_PROVIDER=resend' });
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;
 
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
-  const result = envSchema.safeParse(source);
+  // `KEY=` in a .env file means "not set".
+  const defined = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+  const result = envSchema.safeParse(defined);
 
   if (!result.success) {
     throw new Error(`Invalid environment variables:\n${z.prettifyError(result.error)}`);

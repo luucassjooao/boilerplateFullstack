@@ -6,8 +6,12 @@ import Fastify, { type FastifyBaseLogger } from 'fastify';
 import { NotFound } from '#application/errors/http/NotFound';
 import { makeFastifyRouteAdapter } from '#main/adapters/fastifyRouteAdapter';
 import { internalServerErrorResponse, toErrorResponse } from '#main/adapters/toErrorResponse';
+import { makeAccountsModule } from '#main/composition/accounts';
+import { makeAuthModule } from '#main/composition/auth';
 import type { Infra } from '#main/composition/infra';
 import type { AppConfig } from '#main/config/AppConfig';
+import { registerAccountsRoutes } from '#main/routes/accounts';
+import { registerAuthRoutes } from '#main/routes/auth';
 import { registerHealthRoutes } from '#main/routes/health';
 
 export async function buildServer({ config, infra }: { config: AppConfig; infra: Infra }) {
@@ -50,6 +54,8 @@ export async function buildServer({ config, infra }: { config: AppConfig; infra:
   const adapt = makeFastifyRouteAdapter(infra);
 
   registerHealthRoutes(app, adapt);
+  registerAuthRoutes(app, adapt, makeAuthModule(config, infra));
+  registerAccountsRoutes(app, adapt, makeAccountsModule(infra));
 
   return app;
 }
