@@ -12,6 +12,7 @@ import { makeAppConfig } from '#main/config/AppConfig';
 import { loadEnv } from '#main/config/env';
 import { buildServer } from '#main/server';
 import { FakeEmailGateway } from '#tests/fakes/FakeEmailGateway';
+import { FakeOAuthProvider } from '#tests/fakes/FakeOAuthProvider';
 
 export const testEnv = {
   NODE_ENV: 'test',
@@ -22,6 +23,8 @@ export const testEnv = {
   JWT_SECRET: 'test-jwt-secret-with-at-least-32-bytes!!',
   DATABASE_URL: 'postgres://unused:unused@localhost:5432/unused',
   CODE_HASH_SECRET: 'test-code-hash-secret-with-at-least-32-bytes',
+  API_URL: 'http://api.test',
+  WEB_URL: 'http://localhost:5173',
 };
 
 export function makeTestConfig(overrides: Record<string, string> = {}) {
@@ -32,6 +35,7 @@ export function makeTestConfig(overrides: Record<string, string> = {}) {
 export function makeTestInfra(config = makeTestConfig()) {
   const database = new InMemoryDatabase();
   const emailGateway = new FakeEmailGateway();
+  const oauth = { google: new FakeOAuthProvider('google'), apple: new FakeOAuthProvider('apple', true) };
   const infra: Infra = {
     logger: pino({ level: 'silent' }),
     usersRepository: new InMemoryUsersRepository(database),
@@ -42,16 +46,17 @@ export function makeTestInfra(config = makeTestConfig()) {
     accessTokenService: new JoseAccessTokenService(config.jwt),
     opaqueTokenService: new CryptoOpaqueTokenService(),
     emailGateway,
+    oauthProviders: oauth,
     close: async () => {},
   };
 
-  return { infra, database, emailGateway };
+  return { infra, database, emailGateway, oauth };
 }
 
 export async function makeTestApp() {
   const config = makeTestConfig();
-  const { infra, database, emailGateway } = makeTestInfra(config);
+  const { infra, database, emailGateway, oauth } = makeTestInfra(config);
   const app = await buildServer({ config, infra });
 
-  return { app, config, infra, database, emailGateway };
+  return { app, config, infra, database, emailGateway, oauth };
 }

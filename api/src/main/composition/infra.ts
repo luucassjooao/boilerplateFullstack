@@ -1,12 +1,14 @@
 import { pino, type DestinationStream, type Logger } from 'pino';
 import type { IAccessTokenService } from '#application/contracts/gateways/IAccessTokenService';
 import type { IEmailGateway } from '#application/contracts/gateways/IEmailGateway';
+import type { IOAuthProvider } from '#application/contracts/gateways/IOAuthProvider';
 import type { IOpaqueTokenService } from '#application/contracts/gateways/IOpaqueTokenService';
 import type { IPasswordHasher } from '#application/contracts/gateways/IPasswordHasher';
 import type { IAuthIdentitiesRepository } from '#application/contracts/repositories/IAuthIdentitiesRepository';
 import type { IRefreshTokensRepository } from '#application/contracts/repositories/IRefreshTokensRepository';
 import type { IUsersRepository } from '#application/contracts/repositories/IUsersRepository';
 import type { IVerificationCodesRepository } from '#application/contracts/repositories/IVerificationCodesRepository';
+import type { AuthIdentity } from '#application/entities/AuthIdentity';
 import { Argon2PasswordHasher } from '#infra/auth/Argon2PasswordHasher';
 import { CryptoOpaqueTokenService } from '#infra/auth/CryptoOpaqueTokenService';
 import { JoseAccessTokenService } from '#infra/auth/JoseAccessTokenService';
@@ -17,6 +19,8 @@ import { DrizzleUsersRepository } from '#infra/database/drizzle/repositories/Dri
 import { DrizzleVerificationCodesRepository } from '#infra/database/drizzle/repositories/DrizzleVerificationCodesRepository';
 import { ConsoleEmailGateway } from '#infra/email/ConsoleEmailGateway';
 import { ResendEmailGateway } from '#infra/email/ResendEmailGateway';
+import { AppleOAuthProvider } from '#infra/oauth/AppleOAuthProvider';
+import { GoogleOAuthProvider } from '#infra/oauth/GoogleOAuthProvider';
 import type { AppConfig } from '#main/config/AppConfig';
 
 /** Every infrastructure singleton the application needs. Swap implementations here only. */
@@ -30,6 +34,8 @@ export type Infra = {
   accessTokenService: IAccessTokenService;
   opaqueTokenService: IOpaqueTokenService;
   emailGateway: IEmailGateway;
+  /** Only providers with credentials configured. */
+  oauthProviders: Partial<Record<AuthIdentity.Provider, IOAuthProvider>>;
   close(): Promise<void>;
 };
 
@@ -73,6 +79,13 @@ function makeEmailGateway(config: AppConfig, logger: Logger): IEmailGateway {
   return new ConsoleEmailGateway(logger);
 }
 
+function makeOAuthProviders({ oauth }: AppConfig): Infra['oauthProviders'] {
+  return {
+    ...(oauth.google && { google: new GoogleOAuthProvider(oauth.google) }),
+    ...(oauth.apple && { apple: new AppleOAuthProvider(oauth.apple) }),
+  };
+}
+
 export function makeInfra(config: AppConfig): Infra {
   const logger = makeLogger(config);
   const { db, close } = makeDrizzleClient(config.database.url);
@@ -87,6 +100,7 @@ export function makeInfra(config: AppConfig): Infra {
     accessTokenService: new JoseAccessTokenService(config.jwt),
     opaqueTokenService: new CryptoOpaqueTokenService(),
     emailGateway: makeEmailGateway(config, logger),
+    oauthProviders: makeOAuthProviders(config),
     close,
   };
 }

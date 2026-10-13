@@ -1,5 +1,6 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
+import formbody from '@fastify/formbody';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyBaseLogger } from 'fastify';
@@ -29,6 +30,8 @@ export async function buildServer({ config, infra }: { config: AppConfig; infra:
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Platform'],
   });
   await app.register(cookie, { secret: config.cookies.secret });
+  // Apple's OAuth callback is an application/x-www-form-urlencoded POST.
+  await app.register(formbody);
   await app.register(rateLimit, { global: true, max: 100, timeWindow: '1 minute' });
 
   app.setErrorHandler((error, request, reply) => {

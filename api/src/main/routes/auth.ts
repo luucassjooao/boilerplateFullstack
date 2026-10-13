@@ -16,4 +16,10 @@ export function registerAuthRoutes(app: FastifyInstance, adapt: FastifyRouteAdap
   app.post('/auth/sign-out', adapt(controllers.signOut, pub));
   app.post('/auth/forgot-password', strict, adapt(controllers.forgotPassword, pub));
   app.post('/auth/reset-password', strict, adapt(controllers.resetPassword, pub));
+
+  app.get('/auth/oauth/:provider/authorize', adapt(controllers.oauthAuthorize, pub));
+  // GET for Google, form_post for Apple.
+  app.get('/auth/oauth/:provider/callback', adapt(controllers.oauthCallback, pub));
+  app.post('/auth/oauth/:provider/callback', adapt(controllers.oauthCallback, pub));
+  app.post('/auth/oauth/:provider/token', strict, adapt(controllers.oauthToken, pub));
 }

@@ -1,3 +1,7 @@
+import { OAuthAuthorizeController } from '#application/controllers/auth/OAuthAuthorizeController';
+import { OAuthCallbackController } from '#application/controllers/auth/OAuthCallbackController';
+import { OAuthTokenController } from '#application/controllers/auth/OAuthTokenController';
+import { OAuthTransactionCookie } from '#application/controllers/auth/OAuthTransactionCookie';
 import { ForgotPasswordController } from '#application/controllers/auth/ForgotPasswordController';
 import { RefreshSessionController } from '#application/controllers/auth/RefreshSessionController';
 import { ResendVerificationEmailController } from '#application/controllers/auth/ResendVerificationEmailController';
@@ -7,9 +11,13 @@ import { SignInController } from '#application/controllers/auth/SignInController
 import { SignOutController } from '#application/controllers/auth/SignOutController';
 import { SignUpController } from '#application/controllers/auth/SignUpController';
 import { VerifyEmailController } from '#application/controllers/auth/VerifyEmailController';
+import { OAuthProviders } from '#application/services/OAuthProviders';
 import { VerificationCodeService } from '#application/services/VerificationCodeService';
+import { CompleteOAuthUseCase } from '#application/usecases/auth/CompleteOAuthUseCase';
 import { ConsumeVerificationCodeUseCase } from '#application/usecases/auth/ConsumeVerificationCodeUseCase';
 import { ForgotPasswordUseCase } from '#application/usecases/auth/ForgotPasswordUseCase';
+import { OAuthSignInUseCase } from '#application/usecases/auth/OAuthSignInUseCase';
+import { OAuthTokenSignInUseCase } from '#application/usecases/auth/OAuthTokenSignInUseCase';
 import { RefreshSessionUseCase } from '#application/usecases/auth/RefreshSessionUseCase';
 import { ResendVerificationEmailUseCase } from '#application/usecases/auth/ResendVerificationEmailUseCase';
 import { ResetPasswordUseCase } from '#application/usecases/auth/ResetPasswordUseCase';
@@ -17,6 +25,7 @@ import { SendVerificationCodeUseCase } from '#application/usecases/auth/SendVeri
 import { SignInUseCase } from '#application/usecases/auth/SignInUseCase';
 import { SignOutUseCase } from '#application/usecases/auth/SignOutUseCase';
 import { SignUpUseCase } from '#application/usecases/auth/SignUpUseCase';
+import { StartOAuthUseCase } from '#application/usecases/auth/StartOAuthUseCase';
 import { StartSessionUseCase } from '#application/usecases/auth/StartSessionUseCase';
 import { VerifyEmailUseCase } from '#application/usecases/auth/VerifyEmailUseCase';
 import { verificationCodeEmail } from '#infra/email/templates/verificationCodeEmail';
@@ -53,6 +62,13 @@ export function makeAuthModule(config: AppConfig, infra: Infra) {
     verificationCodeService,
     { maxAttempts: auth.verificationCodeMaxAttempts },
   );
+
+  const oauthProviders = new OAuthProviders(infra.oauthProviders);
+  const oauthSignIn = new OAuthSignInUseCase(infra.usersRepository, infra.authIdentitiesRepository, startSession);
+  const oauthOptions = {
+    callbackUrl: (provider: string) => new URL(`/auth/oauth/${provider}/callback`, config.oauth.apiUrl).toString(),
+  };
+  const oauthTransactionCookie = new OAuthTransactionCookie({ secureCookies: config.cookies.secure });
 
   return {
     sessionTransport,
@@ -95,6 +111,20 @@ export function makeAuthModule(config: AppConfig, infra: Infra) {
           infra.passwordHasher,
           consumeVerificationCode,
         ),
+      ),
+      oauthAuthorize: new OAuthAuthorizeController(
+        new StartOAuthUseCase(oauthProviders, oauthOptions),
+        oauthTransactionCookie,
+      ),
+      oauthCallback: new OAuthCallbackController(
+        new CompleteOAuthUseCase(oauthProviders, oauthSignIn, oauthOptions),
+        sessionTransport,
+        oauthTransactionCookie,
+        { webUrl: config.oauth.webUrl },
+      ),
+      oauthToken: new OAuthTokenController(
+        new OAuthTokenSignInUseCase(oauthProviders, oauthSignIn),
+        sessionTransport,
       ),
     },
   };
