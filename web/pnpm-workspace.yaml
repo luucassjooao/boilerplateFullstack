@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: true
+
+peerDependencyRules:
+  allowedVersions:
+    # eslint-plugin-react declares eslint <=9, but its recommended + jsx-runtime rules work on 10 (see CLAUDE.md).
+    eslint-plugin-react>eslint: '10'
