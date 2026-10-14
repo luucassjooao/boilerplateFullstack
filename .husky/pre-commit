@@ -1,0 +1,6 @@
+# Each package lints its own staged files with its own lint-staged + ESLint config.
+for pkg in api web mobile; do
+  if git diff --cached --name-only --diff-filter=ACMR -- "$pkg/" | grep -q .; then
+    (cd "$pkg" && pnpm exec lint-staged) || exit 1
+  fi
+done

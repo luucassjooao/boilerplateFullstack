@@ -49,7 +49,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "prepare": "husky"
+    "prepare": "cd .. && husky"
   },
   "private": true,
   "packageManager": "pnpm@11.4.0",

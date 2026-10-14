@@ -1,0 +1,11 @@
+# commitlint lives in each package; use the first one installed.
+message_file="$(pwd)/$1"
+
+for pkg in api web mobile; do
+  if [ -x "$pkg/node_modules/.bin/commitlint" ]; then
+    cd "$pkg" && exec pnpm exec commitlint --edit "$message_file"
+  fi
+done
+
+echo "commit-msg: commitlint not installed (run pnpm install in api/, web/ or mobile/)" >&2
+exit 1
